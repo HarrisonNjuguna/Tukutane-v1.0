@@ -7,14 +7,19 @@ import OnboardingScreen from './components/OnboardingScreen';
 import AuthScreen from './components/AuthScreen';
 import HomeScreen from './components/HomeScreen';
 import FavoritesScreen from './components/FavoritesScreen'; 
-import CartScreen from './components/CartScreen'; 
+import TicketsScreen from './components/TicketsScreen'; // Tickets screen
+import ExploreScreen from './components/ExploreScreen'; // Explore screen
 import ProfileScreen from './components/ProfileScreen'; 
+import InterestsScreen from './components/InterestsScreen'; // Interests screen
+import LocationScreen from './components/LocationScreen'; // Location screen
+import PersonalizeScreen from './components/PersonalizeScreen'; // Personalize screen
 import { Ionicons } from '@expo/vector-icons';
 import { auth } from './firebase/firebase';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// Tab Navigator setup for main app screens (Home, Favorites, Tickets, Explore, Profile)
 const TabNavigator = () => {
     return (
         <Tab.Navigator
@@ -27,26 +32,30 @@ const TabNavigator = () => {
                         iconName = focused ? 'home' : 'home-outline';
                     } else if (route.name === 'Favorites') {
                         iconName = focused ? 'heart' : 'heart-outline';
-                    } else if (route.name === 'Cart') {
-                        iconName = focused ? 'cart' : 'cart-outline';
+                    } else if (route.name === 'Tickets') {
+                        iconName = focused ? 'ticket' : 'ticket-outline'; // Icon for Tickets
+                    } else if (route.name === 'Explore') {
+                        iconName = focused ? 'search' : 'search-outline'; // Icon for Explore
                     } else if (route.name === 'Profile') {
                         iconName = focused ? 'person' : 'person-outline';
                     }
 
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
-                tabBarActiveTintColor: '#FFD700',
+                tabBarActiveTintColor: '#ff7518',
                 tabBarInactiveTintColor: 'gray',
             })}
         >
             <Tab.Screen name="Home" component={HomeScreen} />
             <Tab.Screen name="Favorites" component={FavoritesScreen} />
-            <Tab.Screen name="Cart" component={CartScreen} />
+            <Tab.Screen name="Tickets" component={TicketsScreen} /> 
+            <Tab.Screen name="Explore" component={ExploreScreen} /> 
             <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
     );
 };
 
+// Main App component
 export default function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true); 
@@ -60,7 +69,7 @@ export default function App() {
     }, []);
 
     if (loading) {
-        return null; 
+        return null; // Show loading state or splash screen while loading
     }
 
     return (
@@ -73,7 +82,12 @@ export default function App() {
                         <Stack.Screen name="Auth" component={AuthScreen} />
                     </Stack.Group>
                 ) : (
-                    <Stack.Screen name="Main" component={TabNavigator} />
+                    <>
+                        <Stack.Screen name="Interests" component={InterestsScreen} />
+                        <Stack.Screen name="Location" component={LocationScreen} />
+                        <Stack.Screen name="Personalize" component={PersonalizeScreen} />
+                        <Stack.Screen name="Main" component={TabNavigator} />
+                    </>
                 )}
             </Stack.Navigator>
         </NavigationContainer>

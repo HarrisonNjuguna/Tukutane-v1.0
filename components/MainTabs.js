@@ -1,10 +1,11 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import HomeScreen from './screens/HomeScreen'; // Adjust the path as necessary
-import FavoritesScreen from './screens/FavoritesScreen'; // Create this screen
-import CartScreen from './screens/CartScreen'; // Create this screen
-import ProfileScreen from './screens/ProfileScreen'; // Create this screen
+import HomeScreen from './screens/HomeScreen'; 
+import FavoritesScreen from './screens/FavoritesScreen'; 
+import TicketsScreen from './screens/TicketsScreen'; 
+import ExploreScreen from './screens/ExploreScreen'; 
+import ProfileScreen from './screens/ProfileScreen'; 
 import { Ionicons } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator();
@@ -21,8 +22,10 @@ export default function App() {
                             iconName = focused ? 'home' : 'home-outline';
                         } else if (route.name === 'Favorites') {
                             iconName = focused ? 'heart' : 'heart-outline';
-                        } else if (route.name === 'Cart') {
-                            iconName = focused ? 'cart' : 'cart-outline';
+                        } else if (route.name === 'Tickets') {
+                            iconName = focused ? 'ticket' : 'ticket-outline'; // Add icon for Tickets
+                        } else if (route.name === 'Explore') {
+                            iconName = focused ? 'search' : 'search-outline'; // Add icon for Explore
                         } else if (route.name === 'Profile') {
                             iconName = focused ? 'person' : 'person-outline';
                         }
@@ -35,7 +38,8 @@ export default function App() {
             >
                 <Tab.Screen name="Home" component={HomeScreen} />
                 <Tab.Screen name="Favorites" component={FavoritesScreen} />
-                <Tab.Screen name="Cart" component={CartScreen} />
+                <Tab.Screen name="Tickets" component={TicketsScreen} /> {/* Add Tickets tab */}
+                <Tab.Screen name="Explore" component={ExploreScreen} /> {/* Add Explore tab */}
                 <Tab.Screen name="Profile" component={ProfileScreen} />
             </Tab.Navigator>
         </NavigationContainer>

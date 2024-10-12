@@ -14,7 +14,7 @@ const interestsData = [
     { name: "Business", icon: "business" },
     { name: "Cars", icon: "car-sport" },
     { name: "Religious", icon: "people" },
-];
+]; // Instead of 'Religious' use 'Church'
 
 const PersonalizeScreen = ({ navigation }) => {
     const [selectedInterests, setSelectedInterests] = useState([]);

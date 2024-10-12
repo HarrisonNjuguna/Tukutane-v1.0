@@ -6,6 +6,7 @@ const interestsData = [
     { name: "Gaming", icon: "game-controller" },
     { name: "Music", icon: "musical-notes" },
     { name: "Photography", icon: "camera" },
+    // Instead of 'Photography' use 'Culture'
     { name: "Fashion", icon: "shirt-outline" },
     { name: "Fitness", icon: "fitness" },
     { name: "Art", icon: "color-palette-outline" },

@@ -6,6 +6,7 @@ const interestsData = [
     { name: "Gaming", icon: "game-controller" },
     { name: "Music", icon: "musical-notes" },
     { name: "Culture", icon: "camera" },
+    { name: "Photography", icon: "camera" },
     { name: "Fashion", icon: "shirt-outline" },
     { name: "Fitness", icon: "fitness" },
     { name: "Art", icon: "color-palette-outline" },
@@ -14,8 +15,8 @@ const interestsData = [
     { name: "Reality", icon: "business" },
     { name: "Cars", icon: "car-sport" },
     { name: "Church", icon: "people" },
-];
-
+    { name: "Religious", icon: "people" },
+]
 const PersonalizeScreen = ({ navigation }) => {
     const [selectedInterests, setSelectedInterests] = useState([]);
 

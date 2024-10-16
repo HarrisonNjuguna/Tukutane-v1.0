@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Import icons from Expo
+import { Ionicons } from '@expo/vector-icons';
 
 const interestsData = [
     { name: "Gaming", icon: "game-controller" },
     { name: "Music", icon: "musical-notes" },
-    { name: "Photography", icon: "camera" },
+    { name: "Culture", icon: "camera" },
     { name: "Fashion", icon: "shirt-outline" },
     { name: "Fitness", icon: "fitness" },
     { name: "Art", icon: "color-palette-outline" },
     { name: "Sports", icon: "football-outline" },
     { name: "Tech", icon: "laptop-outline" },
-    { name: "Business", icon: "business" },
+    { name: "Reality", icon: "business" },
     { name: "Cars", icon: "car-sport" },
-    { name: "Religious", icon: "people" },
+    { name: "Church", icon: "people" },
 ];
 
 const PersonalizeScreen = ({ navigation }) => {
@@ -61,7 +61,7 @@ const PersonalizeScreen = ({ navigation }) => {
 
             <TouchableOpacity 
                 style={styles.nextButton} 
-                onPress={() => navigation.navigate('Home')} // Replace with the actual home screen name
+                onPress={() => navigation.navigate('Main')} 
             >
                 <Text style={styles.nextButtonText}>Next</Text>
             </TouchableOpacity>
@@ -107,27 +107,27 @@ const styles = StyleSheet.create({
         marginBottom: 40,
     },
     interestButton: {
-        backgroundColor: '#c0c0c0', // Default background for unselected interests
+        backgroundColor: '#c0c0c0',
         borderRadius: 10,
         padding: 15,
         margin: 5,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        flexBasis: '30%', // Allow dynamic sizing
-        minWidth: 120, // Ensure minimum width for smaller screens
-        maxWidth: '48%', // Max width to maintain layout
+        flexBasis: '30%',
+        minWidth: 120,
+        maxWidth: '48%',
     },
     selectedButton: {
-        backgroundColor: '#ff7518', // Background color for selected interests
+        backgroundColor: '#ff7518',
     },
     unselectedButton: {
-        backgroundColor: '#c0c0c0', // Background color for unselected interests
+        backgroundColor: '#c0c0c0',
     },
     interestText: {
         fontSize: 16,
         marginLeft: 10,
-        flexShrink: 1, // Allow text to shrink to fit
+        flexShrink: 1,
     },
     nextButton: {
         backgroundColor: '#ff7518',

@@ -9,7 +9,7 @@ export default function SplashScreen({ navigation }) {
         // Load custom font
         const loadFonts = async () => {
             await Font.loadAsync({
-                'african-font': require('../assets/fonts/african.ttf'), // Replace with your actual font path
+                'african-font': require('../assets/fonts/african.ttf'), 
             });
         };
 
@@ -28,7 +28,7 @@ export default function SplashScreen({ navigation }) {
         // Navigate to onboarding screen after 4 seconds
         setTimeout(() => {
             navigation.navigate('Onboarding');
-        }, 4000);
+        }, 3000);
     }, []);
 
     // Spin animation

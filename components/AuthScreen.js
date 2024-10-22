@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView } from 'react-native';
 import { auth } from '../firebase/firebase'; // Adjust the path if necessary
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { FacebookAuthProvider } from 'firebase/auth';
 import { Facebook } from 'expo-auth-session/providers/facebook';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function AuthScreen({ navigation }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [isSignUp, setIsSignUp] = useState(false);
     const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
+    const [termsModalVisible, setTermsModalVisible] = useState(false);
+    const [isAgreed, setIsAgreed] = useState(false);
 
     useEffect(() => {
         const checkAppleAuth = async () => {
@@ -23,25 +26,32 @@ export default function AuthScreen({ navigation }) {
     }, []);
 
     const handleAuth = () => {
+        if (!email || !password) {
+            Alert.alert('Error', 'Please enter both email and password');
+            return;
+        }
+
         if (isSignUp) {
+            if (password !== confirmPassword) {
+                Alert.alert('Error', "Passwords don't match");
+                return;
+            }
             createUserWithEmailAndPassword(auth, email, password)
                 .then(async (userCredential) => {
-                    console.log('User signed up', userCredential.user);
                     await updateProfile(userCredential.user, { displayName: username });
-                    navigation.navigate('Home');
+                    navigation.navigate('Interests');
                 })
                 .catch(error => {
-                    console.error(error);
+                    console.error("Sign Up Error:", error);
                     Alert.alert('Error', error.message);
                 });
         } else {
             signInWithEmailAndPassword(auth, email, password)
                 .then(userCredential => {
-                    console.log('User signed in', userCredential.user);
-                    navigation.navigate('Home');
+                    navigation.navigate('Interests');
                 })
                 .catch(error => {
-                    console.error(error);
+                    console.error("Sign In Error:", error);
                     Alert.alert('Error', error.message);
                 });
         }
@@ -56,10 +66,9 @@ export default function AuthScreen({ navigation }) {
             if (type === 'success') {
                 const credential = FacebookAuthProvider.credential(token);
                 await auth.signInWithCredential(credential);
-                navigation.navigate('Home');
+                navigation.navigate('Interests');
             }
         } catch (error) {
-            console.error(error);
             Alert.alert('Facebook Login Error', error.message);
         }
     };
@@ -74,33 +83,43 @@ export default function AuthScreen({ navigation }) {
             });
             const appleCredential = firebase.auth.AppleAuthProvider.credential(credential.identityToken);
             await auth.signInWithCredential(appleCredential);
-            navigation.navigate('Home');
+            navigation.navigate('Interests');
         } catch (error) {
-            console.error(error);
             Alert.alert('Apple Login Error', error.message);
         }
     };
 
+    // Check if the email and password fields are filled
+    const isLoginReady = email.length > 0 && password.length > 0;
+
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>{isSignUp ? 'Sign Up' : 'Login'}</Text>
+            <Text style={styles.title}>{isSignUp ? 'Create Account' : 'Sign In'}</Text>
+            <Text style={styles.subtitle}>
+                {isSignUp ? 'Fill your information below or register with your social media accounts' : 'Hi Welcome back!'}
+            </Text>
             {isSignUp && (
-                <TextInput
-                    placeholder="Username"
-                    style={styles.input}
-                    value={username}
-                    onChangeText={setUsername}
-                    autoCapitalize="none"
-                />
+                <>
+                    <Text style={styles.label}>Username</Text>
+                    <TextInput
+                        placeholder="Username"
+                        style={styles.input}
+                        value={username}
+                        onChangeText={setUsername}
+                        autoCapitalize="none"
+                    />
+                </>
             )}
+            <Text style={styles.label}>Email</Text>
             <TextInput
-                placeholder="Email"
+                placeholder="YourEmail@gmail.com"
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
             />
+            <Text style={styles.label}>Password</Text>
             <TextInput
                 placeholder="Password"
                 style={styles.input}
@@ -109,27 +128,82 @@ export default function AuthScreen({ navigation }) {
                 secureTextEntry
                 autoCapitalize="none"
             />
-            <TouchableOpacity style={styles.authButton} onPress={handleAuth}>
+            {isSignUp && (
+                <>
+                    <Text style={styles.label}>Confirm Password</Text>
+                    <TextInput
+                        placeholder="Confirm Password"
+                        style={styles.input}
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                        secureTextEntry
+                        autoCapitalize="none"
+                    />
+                </>
+            )}
+            {isSignUp && (
+                <View style={styles.checkboxContainer}>
+                    <TouchableOpacity onPress={() => setIsAgreed(!isAgreed)}>
+                        <View style={[styles.checkbox, isAgreed && styles.checkedCheckbox]} />
+                    </TouchableOpacity>
+                    <Text style={styles.checkboxText}>
+                        Agree with our <Text style={styles.termsText} onPress={() => setTermsModalVisible(true)}>Terms and Conditions</Text>
+                    </Text>
+                </View>
+            )}
+            <TouchableOpacity
+                style={[styles.authButton, isLoginReady ? styles.activeButton : styles.inactiveButton]}
+                onPress={handleAuth}
+                disabled={!isLoginReady || (isSignUp && !isAgreed)}
+            >
                 <Text style={styles.authButtonText}>{isSignUp ? 'Sign Up' : 'Login'}</Text>
             </TouchableOpacity>
+            <View style={styles.divider}>
+                <View style={styles.line} />
+                <Text style={styles.orText}>Or sign Up with</Text>
+                <View style={styles.line} />
+            </View>
+            <View style={styles.socialButtonsContainer}>
+                <TouchableOpacity style={styles.socialButton} onPress={handleFacebookLogin}>
+                    <FontAwesome name="facebook" size={24} color="#fff" />
+                </TouchableOpacity>
+                {isAppleAuthAvailable && (
+                    <TouchableOpacity style={styles.appleButton} onPress={handleAppleLogin}>
+                        <MaterialCommunityIcons name="apple" size={24} color="#fff" />
+                    </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.googleButton}>
+                    <MaterialCommunityIcons name="google" size={24} color="#fff" />
+                </TouchableOpacity>
+            </View>
             <TouchableOpacity onPress={() => setIsSignUp(!isSignUp)}>
                 <Text style={styles.toggleText}>
-                    {isSignUp ? 'Already have an account? Login' : 'Don’t have an account? Sign Up'}
+                    {isSignUp ? 'Already have an account? ' : 'Don’t have an account? '}
+                    <Text style={styles.toggleHighlight}>{isSignUp ? 'Sign In' : 'Sign Up'}</Text>
                 </Text>
             </TouchableOpacity>
 
-            {/* Facebook Login */}
-            <TouchableOpacity style={styles.socialButton} onPress={handleFacebookLogin}>
-                <FontAwesome name="facebook" size={20} color="#fff" />
-                <Text style={styles.socialButtonText}>Facebook</Text>
-            </TouchableOpacity>
-
-            {/* Apple Login (Only for iOS) */}
-            {isAppleAuthAvailable && (
-                <TouchableOpacity style={styles.appleButton} onPress={handleAppleLogin}>
-                    <Text style={styles.appleButtonText}>Sign in with Apple</Text>
-                </TouchableOpacity>
-            )}
+            <Modal
+                visible={termsModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setTermsModalVisible(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <ScrollView>
+                            <Text style={styles.termsTitle}>Terms and Conditions</Text>
+                            <Text style={styles.termsText}>
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+                                Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                            </Text>
+                        </ScrollView>
+                        <TouchableOpacity style={styles.closeButton} onPress={() => setTermsModalVisible(false)}>
+                            <Text style={styles.closeButtonText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -139,88 +213,149 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
         justifyContent: 'center',
-        backgroundColor: '#ff5733',
+        backgroundColor: '#f5f5f5',
     },
     title: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: '#fff',
+        color: '#111',
         textAlign: 'center',
-        marginBottom: 20,
+        marginBottom: 40,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#848482',
+        textAlign: 'center',
+        marginBottom: 40,
+    },
+    label: {
+        fontSize: 16,
+        color: '#333',
+        marginBottom: 5,
     },
     input: {
         backgroundColor: '#fff',
-        padding: 10,
-        borderRadius: 5,
+        padding: 15,
+        borderRadius: 10,
         marginBottom: 15,
+        borderWidth: 1,
+        borderColor: '#ddd',
     },
     authButton: {
-        backgroundColor: '#f0f0f0', // Light gray background
         paddingVertical: 15,
-        borderRadius: 30, // More rounded corners
+        borderRadius: 30,
         marginBottom: 20,
         alignItems: 'center',
-        alignSelf: 'center', // Center the button
-        width: '80%', // Set width to 80%
-        elevation: 3, // Add shadow for modern look
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
+        alignSelf: 'center',
+        width: '80%',
+    },
+    activeButton: {
+        backgroundColor: '#ff7518',
+    },
+    inactiveButton: {
+        backgroundColor: '#ddd',
     },
     authButtonText: {
         fontSize: 18,
-        color: '#333', // Dark gray for text
-        fontWeight: 'bold',
-    },    
-    toggleText: {
-        fontSize: 16,
         color: '#fff',
-        textAlign: 'center',
+        fontWeight: 'bold',
+    },
+    checkboxContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderColor: '#ff7518',
+        borderWidth: 2,
+        borderRadius: 4,
+        marginRight: 10,
+    },
+    checkedCheckbox: {
+        backgroundColor: '#ff7518',
+    },
+    checkboxText: {
+        fontSize: 16,
+        color: '#111',
+    },
+    termsText: {
+        color: '#ff7518',
+    },
+    divider: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 20,
+    },
+    line: {
+        height: 1,
+        flex: 1,
+        backgroundColor: '#ddd',
+    },
+    orText: {
+        marginHorizontal: 10,
+        color: '#111',
+    },
+    socialButtonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
         marginBottom: 20,
     },
     socialButton: {
-        flexDirection: 'row',
         backgroundColor: '#3b5998',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 5,
+        padding: 15,
+        borderRadius: 30,
         alignItems: 'center',
-        marginBottom: 10,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
-        alignSelf: 'center', // Center the button
-        width: '80%', // Set width to 80%
-        justifyContent: 'center', // Center the content
-    },
-    socialButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 16,
-        textAlign: 'center', // Center the text within the button
-        marginLeft: 5, // Optional: Small space between icon and text
+        width: 60,
     },
     appleButton: {
         backgroundColor: '#000',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
+        padding: 15,
+        borderRadius: 30,
+        alignItems: 'center',
+        width: 60,
+    },
+    googleButton: {
+        backgroundColor: '#db4437',
+        padding: 15,
+        borderRadius: 30,
+        alignItems: 'center',
+        width: 60,
+    },
+    toggleText: {
+        fontSize: 16,
+        color: '#111',
+        textAlign: 'center',
+    },
+    toggleHighlight: {
+        color: '#ff7518',
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    },
+    modalContent: {
+        width: '80%',
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 20,
+    },
+    termsTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    closeButton: {
+        backgroundColor: '#ff7518',
+        padding: 10,
         borderRadius: 5,
         alignItems: 'center',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
-        marginTop: 10,
-        alignSelf: 'center', // Center the button
-        width: '80%', // Set width to 80%
     },
-    appleButtonText: {
+    closeButtonText: {
         color: '#fff',
-        fontWeight: 'bold',
         fontSize: 16,
     },
 });

@@ -7,12 +7,12 @@ import axios from 'axios'; // Make sure to import axios
 
 const categoriesData = ["Music", "Tech", "Sports", "Fashion", "Fitness", "Art"];
 const eventsData = [
-    { id: 1, image: 'event-image-url', category: 'Music', date: '2024-11-01', location: 'Nairobi', price: 1000, description: 'Join us for a night of live music!', rating: 4.5, title: 'Live Music Night' },
-    { id: 2, image: 'event-image-url', category: 'Tech', date: '2024-11-05', location: 'Mombasa', price: 1500, description: 'Explore the latest in technology.', rating: 4.0, title: 'Tech Expo 2024' },
-    { id: 3, image: 'event-image-url', category: 'Sports', date: '2024-11-10', location: 'Nairobi', price: 2000, description: 'Catch the big game live!', rating: 5.0, title: 'Football Match' },
-    { id: 4, image: 'event-image-url', category: 'Fashion', date: '2024-11-15', location: 'Mombasa', price: 1200, description: 'Fashion show featuring top designers.', rating: 4.8, title: 'Fashion Week' },
-    { id: 5, image: 'event-image-url', category: 'Art', date: '2024-11-20', location: 'Nairobi', price: 800, description: 'Art exhibition showcasing local artists.', rating: 4.7, title: 'Local Artists Exhibition' },
-    { id: 6, image: 'event-image-url', category: 'Fitness', date: '2024-11-25', location: 'Mombasa', price: 500, description: 'Join our outdoor fitness bootcamp!', rating: 4.6, title: 'Outdoor Bootcamp' },
+    { id: 1, image: 'https://images.unsplash.com/photo-1530491396055-5aca4203edbf?q=80&w=1371&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', category: 'Music', date: '2024-11-01', location: 'Nairobi', price: 1000, description: 'Join us for a night of live music!', rating: 4.5, title: 'Live Music Night' },
+    { id: 2, image: 'https://images.unsplash.com/photo-1530491396055-5aca4203edbf?q=80&w=1371&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', category: 'Tech', date: '2024-11-05', location: 'Mombasa', price: 1500, description: 'Explore the latest in technology.', rating: 4.0, title: 'Tech Expo 2024' },
+    { id: 3, image: 'https://images.unsplash.com/photo-1530491396055-5aca4203edbf?q=80&w=1371&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', category: 'Sports', date: '2024-11-10', location: 'Nairobi', price: 2000, description: 'Catch the big game live!', rating: 5.0, title: 'Football Match' },
+    { id: 4, image: 'https://images.unsplash.com/photo-1530491396055-5aca4203edbf?q=80&w=1371&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', category: 'Fashion', date: '2024-11-15', location: 'Mombasa', price: 1200, description: 'Fashion show featuring top designers.', rating: 4.8, title: 'Fashion Week' },
+    { id: 5, image: 'https://images.unsplash.com/photo-1530491396055-5aca4203edbf?q=80&w=1371&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', category: 'Art', date: '2024-11-20', location: 'Nairobi', price: 800, description: 'Art exhibition showcasing local artists.', rating: 4.7, title: 'Local Artists Exhibition' },
+    { id: 6, image: 'https://images.unsplash.com/photo-1530491396055-5aca4203edbf?q=80&w=1371&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', category: 'Fitness', date: '2024-11-25', location: 'Mombasa', price: 500, description: 'Join our outdoor fitness bootcamp!', rating: 4.6, title: 'Outdoor Bootcamp' },
 ];
 
 const HomeScreen = ({ navigation }) => {

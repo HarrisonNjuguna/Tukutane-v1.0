@@ -8,19 +8,19 @@ import {
     Modal,
     TextInput,
     Alert,
-    ScrollView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { db } from '../firebase/firebase'; // Ensure you import your Firebase config
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { db } from '../firebase/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfileScreen({ navigation }) {
     const [modalVisible, setModalVisible] = useState(false);
-    const [privacyModalVisible, setPrivacyModalVisible] = useState(false);
     const [username, setUsername] = useState('');
-    const [phoneNumber, setPhoneNumber] = useState('Your Phone Number');
-    const [email, setEmail] = useState('your.email@example.com');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [email, setEmail] = useState('');
+    const [profilePicture, setProfilePicture] = useState('');
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -28,12 +28,18 @@ export default function ProfileScreen({ navigation }) {
             const user = auth.currentUser;
 
             if (user) {
-                const userDoc = await getDoc(doc(db, 'users', user.uid));
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    setUsername(data.username);
-                    setPhoneNumber(data.phoneNumber || 'Your Phone Number');
-                    setEmail(data.email || 'your.email@example.com');
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', user.uid));
+                    if (userDoc.exists()) {
+                        const data = userDoc.data();
+                        setUsername(data.username);
+                        setEmail(data.email || ''); // Set email, but don't allow editing
+                        setPhoneNumber(data.phoneNumber || ''); // Set phone number
+                        setProfilePicture(data.profilePicture || 'https://example.com/default-profile-picture.jpg');
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                    Alert.alert("Error", "Could not fetch user data.");
                 }
             }
         };
@@ -46,41 +52,114 @@ export default function ProfileScreen({ navigation }) {
         const user = auth.currentUser;
 
         if (user) {
-            await updateDoc(doc(db, 'users', user.uid), { username });
-            Alert.alert("Success", "Username updated!");
-            setModalVisible(false);
+            try {
+                await updateDoc(doc(db, 'users', user.uid), { username, phoneNumber });
+                Alert.alert("Success", "Profile updated!");
+                setModalVisible(false);
+            } catch (error) {
+                console.error("Error updating profile:", error);
+                Alert.alert("Error", "Could not update profile.");
+            }
         }
     };
 
-    const handleInviteFriends = () => {
-        // Logic to generate and share the invite link
-        Alert.alert("Invite Friends", "Link to share: http://example.com/invite");
+    const handleProfilePictureChange = async () => {
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (permissionResult.granted === false) {
+            Alert.alert("Permission to access camera roll is required!");
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            const selectedImage = result.assets[0].uri;
+            setProfilePicture(selectedImage);
+
+            const auth = getAuth();
+            const user = auth.currentUser;
+
+            if (user) {
+                try {
+                    await updateDoc(doc(db, 'users', user.uid), { profilePicture: selectedImage });
+                    Alert.alert("Success", "Profile picture updated!");
+                } catch (error) {
+                    console.error("Error updating profile picture:", error);
+                    Alert.alert("Error", "Could not update profile picture.");
+                }
+            }
+        } else {
+            Alert.alert("No image selected.");
+        }
     };
+
+    const handleLogout = () => {
+        const auth = getAuth();
+        auth.signOut()
+            .then(() => navigation.navigate('Splash'))
+            .catch(error => {
+                console.error("Error signing out:", error);
+                Alert.alert("Error", "Could not log out.");
+            });
+    };
+
+    const sections = [
+        { title: "Your Profile", icon: <Ionicons name="person-outline" size={24} color="#ff7518" />, onPress: () => setModalVisible(true) },
+        { title: "Payment Methods", icon: <MaterialCommunityIcons name="credit-card-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Payment Methods', 'Details here...') },
+        { title: "Settings", icon: <Ionicons name="settings-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Settings', 'Details here...') },
+        { title: "Help Center", icon: <Ionicons name="help-circle-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Help Center', 'Details here...') },
+        { title: "Privacy Policy", icon: <MaterialCommunityIcons name="shield-lock-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Privacy Policy', 'Details here...') },
+        { title: "Invite Friends", icon: <Ionicons name="person-add-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Invite Friends', 'Details here...') },
+        { title: "Logout", icon: <Ionicons name="log-out-outline" size={24} color="#ff7518" />, onPress: handleLogout },
+    ];
+
+    const settingsSections = [
+        { title: "Change Password", icon: <Ionicons name="lock-closed-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Change Password', 'Functionality to change password...') },
+        { title: "Two-Factor Authentication", icon: <Ionicons name="shield-checkmark-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Two-Factor Authentication', 'Enable extra security...') },
+        { title: "Profile Visibility", icon: <Ionicons name="eye-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Profile Visibility', 'Choose visibility settings...') },
+        { title: "Block/Unblock Users", icon: <Ionicons name="person-remove-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Block/Unblock Users', 'Manage blocked users...') },
+        { title: "Push Notifications", icon: <Ionicons name="notifications-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Push Notifications', 'Toggle notifications...') },
+        { title: "Email Notifications", icon: <Ionicons name="mail-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Email Notifications', 'Control email notifications...') },
+        { title: "Language Preferences", icon: <Ionicons name="language-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Language Preferences', 'Choose your language...') },
+        { title: "Region Settings", icon: <Ionicons name="globe-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Region Settings', 'Set your region...') },
+        { title: "Dark/Light Mode", icon: <Ionicons name="moon-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Dark/Light Mode', 'Switch theme...') },
+        { title: "Font Size Adjustment", icon: <Ionicons name="text-outline" size={24} color="#ff7518" />, onPress: () => Alert.alert('Font Size Adjustment', 'Adjust font size...') }
+    ];
 
     return (
         <View style={styles.container}>
-            {/* Back Button */}
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                {/* Profile Picture */}
-                <TouchableOpacity style={styles.profilePictureContainer}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.navigate('Main')} style={styles.backButton}>
+                    <Ionicons name="arrow-back" size={24} color="#fff" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Profile</Text>
+                <TouchableOpacity onPress={handleProfilePictureChange} style={styles.profilePictureContainer}>
                     <Image
-                        source={{ uri: 'https://example.com/profile-picture.jpg' }} // Placeholder URL
+                        source={{ uri: profilePicture }}
                         style={styles.profilePicture}
                     />
                 </TouchableOpacity>
+                <Text style={styles.username}>{username || '@username'}</Text>
+            </View>
 
-                <Text style={styles.sectionTitle}>Your Profile</Text>
-                <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.section}>
-                    <Ionicons name="person-outline" size={24} color="#ff7518" />
-                    <Text style={styles.sectionText}>{username}</Text>
-                    <Text style={styles.editText}>Edit</Text>
-                </TouchableOpacity>
+            <View style={styles.sectionsContainer}>
+                {sections.map((section, index) => (
+                    <View key={index}>
+                        <TouchableOpacity style={styles.section} onPress={section.onPress}>
+                            {section.icon}
+                            <Text style={styles.sectionText}>{section.title}</Text>
+                            <Ionicons name="chevron-forward" size={24} color="#333" />
+                        </TouchableOpacity>
+                        <View style={styles.separator} />
+                    </View>
+                ))}
 
-                {/* Edit Profile Modal */}
                 <Modal
                     animationType="slide"
                     transparent={true}
@@ -89,22 +168,22 @@ export default function ProfileScreen({ navigation }) {
                 >
                     <View style={styles.modalContainer}>
                         <View style={styles.modalContent}>
+                            <Text style={styles.label}>Username</Text>
                             <TextInput
-                                placeholder="Username"
                                 value={username}
                                 onChangeText={setUsername}
                                 style={styles.input}
                             />
+                            <Text style={styles.label}>Email</Text>
                             <TextInput
-                                placeholder="Phone Number"
-                                value={phoneNumber}
-                                onChangeText={setPhoneNumber}
+                                value={email}
+                                editable={false} // Make email non-editable
                                 style={styles.input}
                             />
+                            <Text style={styles.label}>Phone Number</Text>
                             <TextInput
-                                placeholder="Email"
-                                value={email}
-                                onChangeText={setEmail}
+                                value={phoneNumber}
+                                onChangeText={setPhoneNumber}
                                 style={styles.input}
                             />
                             <View style={styles.modalButtonContainer}>
@@ -119,76 +198,20 @@ export default function ProfileScreen({ navigation }) {
                     </View>
                 </Modal>
 
-                {/* Payment Methods Section */}
-                <TouchableOpacity style={styles.section} onPress={() => alert('Open Payment Methods')}>
-                    <Ionicons name="card-outline" size={24} color="#ff7518" />
-                    <Text style={styles.sectionText}>Payment Methods</Text>
-                    <Text style={styles.editText}>Select</Text>
-                </TouchableOpacity>
-
-                {/* Settings Section */}
-                <TouchableOpacity style={styles.section} onPress={() => alert('Open Settings')}>
-                    <Ionicons name="settings-outline" size={24} color="#ff7518" />
-                    <Text style={styles.sectionText}>Settings</Text>
-                    <Text style={styles.editText}>Manage</Text>
-                </TouchableOpacity>
-
-                {/* Help Center Section */}
-                <TouchableOpacity style={styles.section} onPress={() => alert('Open Help Center')}>
-                    <Ionicons name="help-circle-outline" size={24} color="#ff7518" />
-                    <Text style={styles.sectionText}>Help Center</Text>
-                    <Text style={styles.editText}>Contact</Text>
-                </TouchableOpacity>
-
-                {/* Privacy Policy Section */}
-                <TouchableOpacity style={styles.section} onPress={() => setPrivacyModalVisible(true)}>
-                    <Ionicons name="document-text-outline" size={24} color="#ff7518" />
-                    <Text style={styles.sectionText}>Privacy Policy</Text>
-                    <Text style={styles.editText}>View</Text>
-                </TouchableOpacity>
-
-                {/* Invite Friends Button */}
-                <TouchableOpacity style={styles.inviteButton} onPress={handleInviteFriends}>
-                    <Text style={styles.inviteButtonText}>Invite Friends</Text>
-                </TouchableOpacity>
-            </ScrollView>
-
-            {/* Privacy Policy Modal */}
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={privacyModalVisible}
-                onRequestClose={() => setPrivacyModalVisible(false)}
-            >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.pdfTitle}>Privacy Policy</Text>
-                        <ScrollView style={styles.pdfScroll}>
-                            <Text style={styles.pdfText}>
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                                Sed do eiusmod tempor incididunt ut labore et dolore magna 
-                                aliqua. Ut enim ad minim veniam, quis nostrud exercitation 
-                                ullamco laboris nisi ut aliquip ex ea commodo consequat. 
-                                Duis aute irure dolor in reprehenderit in voluptate velit 
-                                esse cillum dolore eu fugiat nulla pariatur. Excepteur 
-                                sint occaecat cupidatat non proident, sunt in culpa qui 
-                                officia deserunt mollit anim id est laborum.
-                                {'\n\n'}
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                                Sed do eiusmod tempor incididunt ut labore et dolore magna 
-                                aliqua. Ut enim ad minim veniam, quis nostrud exercitation 
-                                ullamco laboris nisi ut aliquip ex ea commodo consequat. 
-                            </Text>
-                        </ScrollView>
-                        <TouchableOpacity 
-                            style={styles.closeButton} 
-                            onPress={() => setPrivacyModalVisible(false)}
-                        >
-                            <Text style={styles.closeButtonText}>Close</Text>
+                {/* Render Settings Section */}
+                {settingsSections.map((section, index) => (
+                    <View key={index}>
+                        <TouchableOpacity style={styles.section} onPress={section.onPress}>
+                            {section.icon}
+                            <Text style={styles.sectionText}>{section.title}</Text>
+                            <Ionicons name="chevron-forward" size={24} color="#333" />
                         </TouchableOpacity>
+                        <View style={styles.separator} />
                     </View>
-                </View>
-            </Modal>
+                ))}
+            </View>
+
+            <Text style={styles.versionText}>App Version: 1.0.0</Text>
         </View>
     );
 }
@@ -196,32 +219,47 @@ export default function ProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
         padding: 20,
+        backgroundColor: '#f0f0f0',
+    },
+    header: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 50,
+        marginBottom: 20, // Added margin to create space between header and sections
     },
     backButton: {
-        padding: 10,
+        position: 'absolute',
+        left: 1,
+        top: 50,
         backgroundColor: '#ff7518',
-        borderRadius: 50,
-        alignSelf: 'flex-start',
+        borderRadius: 18,
+        padding: 8,
     },
-    scrollContainer: {
-        paddingBottom: 40,
-        alignItems: 'center',
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 10,
     },
     profilePictureContainer: {
-        alignItems: 'center',
-        marginVertical: 20,
+        borderRadius: 75,
+        overflow: 'hidden',
+        borderWidth: 3,
+        borderColor: '#ff7518',
+        marginBottom: 5,
     },
     profilePicture: {
         width: 100,
         height: 100,
         borderRadius: 50,
     },
-    sectionTitle: {
-        fontSize: 22,
+    username: {
+        fontSize: 20, // Increased size for better visibility
         fontWeight: 'bold',
-        marginVertical: 10,
+        color: '#333',
+    },
+    sectionsContainer: {
+        flex: 1,
     },
     section: {
         flexDirection: 'row',
@@ -229,10 +267,10 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         padding: 15,
         width: '100%',
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#ffffff',
         borderRadius: 10,
         marginBottom: 10,
-        elevation: 3, // 3D effect
+        elevation: 5,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
@@ -242,35 +280,44 @@ const styles = StyleSheet.create({
         fontSize: 18,
         flex: 1,
         marginLeft: 10,
+        color: '#333',
     },
-    editText: {
-        color: '#ff7518',
-        fontSize: 16,
+    separator: {
+        height: 1,
+        backgroundColor: '#eee',
+        marginVertical: 5,
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginBottom: 5,
+        color: '#333',
+    },
+    input: {
+        height: 45,
+        borderColor: '#ccc',
+        borderWidth: 1,
+        marginBottom: 15,
+        paddingHorizontal: 15,
+        borderRadius: 10,
+        backgroundColor: '#f9f9f9',
     },
     modalContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.7)',
     },
     modalContent: {
         width: '90%',
         backgroundColor: 'white',
         padding: 20,
         borderRadius: 20,
-        elevation: 10, // For Android shadow
+        elevation: 10,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 6,
-    },
-    input: {
-        height: 40,
-        borderColor: '#ccc',
-        borderWidth: 1,
-        marginBottom: 15,
-        paddingHorizontal: 10,
-        borderRadius: 10,
     },
     modalButtonContainer: {
         flexDirection: 'row',
@@ -287,50 +334,13 @@ const styles = StyleSheet.create({
     },
     modalButtonText: {
         color: '#fff',
-    },
-    inviteButton: {
-        backgroundColor: '#ff7518',
-        padding: 15,
-        alignItems: 'center',
-        borderRadius: 5,
-        marginTop: 20,
-        width: '100%',
-    },
-    inviteButtonText: {
-        color: '#fff',
-        fontSize: 16,
-    },
-    pdfTitle: {
-        fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 10,
-        textAlign: 'center',
-        color: '#333',
     },
-    pdfScroll: {
-        maxHeight: 300,
-        marginBottom: 20,
-    },
-    pdfText: {
-        fontSize: 16,
-        lineHeight: 24,
-        color: '#555',
-    },
-    closeButton: {
-        backgroundColor: '#ff7518',
-        paddingVertical: 15,
-        borderRadius: 10,
-        alignItems: 'center',
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-    },
-    closeButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
+    versionText: {
+        position: 'absolute',
+        bottom: 3,
+        left: 20,
+        color: '#999',
+        fontSize: 10,
     },
 });
-

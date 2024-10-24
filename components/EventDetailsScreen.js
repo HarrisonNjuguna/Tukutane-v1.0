@@ -15,12 +15,12 @@ const EventDetails = ({ route, navigation }) => {
             toValue: 1,
             useNativeDriver: true,
         }).start();
-
+    
         const countdown = setInterval(() => {
             const eventDate = new Date(event.date).getTime();
             const now = new Date().getTime();
             const distance = eventDate - now;
-
+    
             if (distance < 0) {
                 clearInterval(countdown);
                 setTimeLeft("Event has started!");
@@ -28,16 +28,26 @@ const EventDetails = ({ route, navigation }) => {
                 const days = Math.floor(distance / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                setTimeLeft(`${days}d ${hours}h ${minutes}m left!`);
+                const newTimeLeft = `${days}d ${hours}h ${minutes}m left!`;
+    
+                // Use functional state update to avoid closure issues
+                setTimeLeft((prevTimeLeft) => {
+                    if (newTimeLeft !== prevTimeLeft) {
+                        return newTimeLeft;
+                    }
+                    return prevTimeLeft; // Return the old value if it hasn't changed
+                });
             }
         }, 1000);
-
+    
         return () => clearInterval(countdown);
-    }, [event.date]);
+    }, [event.date]); 
+     // Added timeLeft to dependencies to avoid closure issues
 
     const handleMapPress = () => {
-        const locationUrl = `https://www.google.com/maps/search/?api=1&query=${event.location}`;
-        Linking.openURL(locationUrl);
+        navigation.navigate('Explore', {
+            coordinates: event.coordinates,
+        });
     };
 
     const handleBookNowPress = () => {
@@ -65,7 +75,7 @@ const EventDetails = ({ route, navigation }) => {
     const socialMediaLinks = [
         { name: 'Facebook', icon: 'logo-facebook', url: `https://facebook.com/sharer/sharer.php?u=${event.url}` },
         { name: 'Twitter', icon: 'logo-twitter', url: `https://twitter.com/intent/tweet?url=${event.url}` },
-        { name: 'WhatsApp', icon: 'logo-whatsapp', action: shareOnWhatsApp }, // Added WhatsApp sharing
+        { name: 'WhatsApp', icon: 'logo-whatsapp', action: shareOnWhatsApp },
         { name: 'Instagram', icon: 'logo-instagram', url: event.instagramUrl },
     ];
 

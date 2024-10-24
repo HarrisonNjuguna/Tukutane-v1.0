@@ -48,7 +48,7 @@ export default function AuthScreen({ navigation }) {
         } else {
             signInWithEmailAndPassword(auth, email, password)
                 .then(userCredential => {
-                    navigation.navigate('Interests');
+                    navigation.navigate('Main');
                 })
                 .catch(error => {
                     console.error("Sign In Error:", error);

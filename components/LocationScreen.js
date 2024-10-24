@@ -1,39 +1,115 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Ensure you have this library installed
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 
 const LocationScreen = ({ navigation }) => {
-    
-    // Function to handle location access
+    const [currentCity, setCurrentCity] = useState(null);
+    const [locationPermission, setLocationPermission] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [cachedLocation, setCachedLocation] = useState(null);
+
+    useEffect(() => {
+        // Check location permission on mount
+        const checkLocationPermission = async () => {
+            const { status } = await Location.getForegroundPermissionsAsync();
+            setLocationPermission(status === 'granted');
+
+            // If permission was granted, try to fetch cached location
+            if (status === 'granted' && cachedLocation) {
+                setCurrentCity(cachedLocation);
+            }
+        };
+
+        checkLocationPermission();
+    }, [cachedLocation]);
+
     const handleAllowLocationAccess = () => {
-        // You can implement location access request here
-        Alert.alert("Location Access", "Please allow access to your location.");
+        Alert.alert(
+            "Location Access",
+            "Do you want to allow location access?",
+            [
+                {
+                    text: "No",
+                    onPress: () => console.log("Location access denied"),
+                    style: "cancel"
+                },
+                {
+                    text: "Yes",
+                    onPress: startLocationUpdates,
+                }
+            ]
+        );
     };
 
-    // Function to handle manual location entry
-    const handleEnterLocationManually = () => {
-        // Navigate to a screen where user can enter location manually
-        Alert.alert("Enter Location Manually", "This will take you to the manual entry screen.");
+    const startLocationUpdates = async () => {
+        if (!locationPermission) {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            setLocationPermission(status === 'granted');
+        }
+
+        if (locationPermission) {
+            setLoading(true);
+            try {
+                // Request the highest accuracy for location
+                const { coords } = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.High,
+                });
+                await fetchCityName(coords.latitude, coords.longitude);
+            } catch (error) {
+                console.error(error);
+                Alert.alert("Error", "Could not fetch location. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+        } else {
+            Alert.alert("Location Access Denied", "Please enable location services.");
+        }
+    };
+
+    const fetchCityName = async (latitude, longitude) => {
+        try {
+            // Use a timeout to prevent excessively long waits
+            const response = await Promise.race([
+                Location.reverseGeocodeAsync({ latitude, longitude }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000)) // 5 seconds timeout
+            ]);
+            if (response.length > 0) {
+                const { city, region } = response[0];
+                const cityName = city ? city : region; // Fallback to region if city is not available
+                setCurrentCity(cityName);
+                setCachedLocation(cityName); // Cache the current city for future use
+            } else {
+                Alert.alert("Error", "Could not determine city from your location.");
+            }
+        } catch (error) {
+            console.error(error);
+            Alert.alert("Error", "Could not fetch location name. Please try again.");
+        }
+    };
+
+    const handleNext = () => {
+        if (currentCity) {
+            navigation.navigate('Personalize');
+        } else {
+            Alert.alert("Location Error", "Please allow location access to proceed.");
+        }
     };
 
     return (
         <View style={styles.container}>
-            {/* Header */}
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                 <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
 
-            {/* Location Icon */}
             <View style={styles.locationIconContainer}>
                 <View style={styles.locationIconBackground}>
                     <Ionicons name="location" size={40} color="#ff7518" />
                 </View>
             </View>
 
-            {/* Title Text */}
             <Text style={styles.title}>What is your Location?</Text>
 
-            {/* Subtext */}
             <Text style={styles.subtext}>
                 To find nearby events, share your location with us.
             </Text>
@@ -43,15 +119,23 @@ const LocationScreen = ({ navigation }) => {
                 <Text style={styles.buttonText}>Allow Location Access</Text>
             </TouchableOpacity>
 
-            {/* Clickable text for manual location entry */}
-            <TouchableOpacity onPress={handleEnterLocationManually}>
-                <Text style={styles.manualText}>Enter Location Manually</Text>
-            </TouchableOpacity>
+            {loading ? (
+                <ActivityIndicator size="large" color="#ff7518" />
+            ) : currentCity ? (
+                <Text style={styles.currentLocationText}>
+                    Current Location: {currentCity}
+                </Text>
+            ) : (
+                <Text style={styles.subtext}>
+                    {locationPermission ? "Location access granted. Please fetch your location." : "Location access denied."}
+                </Text>
+            )}
 
-            {/* Next Button */}
+            {/* Next Button with color change based on state */}
             <TouchableOpacity 
-                style={styles.nextButton} 
-                onPress={() => navigation.navigate('Personalize')} 
+                style={[styles.nextButton, { backgroundColor: currentCity ? '#ff7518' : '#ccc' }]} 
+                onPress={handleNext}
+                disabled={!currentCity} // Disable until city is fetched
             >
                 <Text style={styles.nextButtonText}>Next</Text>
             </TouchableOpacity>
@@ -98,6 +182,11 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 20,
     },
+    currentLocationText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 20,
+    },
     allowButton: {
         backgroundColor: '#ff7518',
         paddingVertical: 15,
@@ -112,17 +201,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
-    manualText: {
-        color: '#ff7518', // Set the color to #ff7518
-        fontSize: 18,
-        fontWeight: 'bold', // Make the text bold
-        marginBottom: 20,
-    },
     nextButton: {
-        backgroundColor: '#ff7518',
         paddingVertical: 15,
         borderRadius: 30,
-        marginTop: 90,
+        marginTop: 20,
         alignItems: 'center',
         width: '100%',
     },

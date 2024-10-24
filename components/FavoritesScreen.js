@@ -1,28 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const categoriesData = ["All", "Music", "Tech", "Sports", "Fashion", "Fitness", "Art"];
 
 const FavoritesScreen = ({ navigation, route }) => {
     const [favoriteEvents, setFavoriteEvents] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState("All");
+
+    // Load favorites from AsyncStorage
+    useEffect(() => {
+        const loadFavorites = async () => {
+            const savedFavorites = await AsyncStorage.getItem('favorites');
+            if (savedFavorites) {
+                setFavoriteEvents(JSON.parse(savedFavorites));
+            }
+        };
+        loadFavorites();
+    }, []);
 
     // Update favorites when navigating from the home screen
     useEffect(() => {
         if (route.params?.newEvent) {
-            setFavoriteEvents((prevFavorites) => [...prevFavorites, route.params.newEvent]);
+            setFavoriteEvents((prevFavorites) => {
+                const updatedFavorites = [...prevFavorites, route.params.newEvent];
+                AsyncStorage.setItem('favorites', JSON.stringify(updatedFavorites)); // Save to AsyncStorage
+                return updatedFavorites;
+            });
         }
     }, [route.params?.newEvent]);
 
-    const filteredFavorites = favoriteEvents; // Display all favorites for now
+    // Filter favorites based on selected category
+    const filteredFavorites = selectedCategory === "All"
+        ? favoriteEvents
+        : favoriteEvents.filter(event => event.category === selectedCategory);
 
     const renderCategoryButton = (category) => {
-        const isSelected = category === "All";
+        const isSelected = category === selectedCategory;
         return (
             <TouchableOpacity
                 key={category}
                 style={[styles.categoryButton, isSelected && styles.selectedCategory]}
-                onPress={() => console.log(`Selected category: ${category}`)}
+                onPress={() => setSelectedCategory(category)}
             >
                 <Text style={[styles.categoryButtonText, isSelected && styles.selectedCategoryText]}>
                     {category}
@@ -46,9 +66,6 @@ const FavoritesScreen = ({ navigation, route }) => {
         <View style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
-                </TouchableOpacity>
                 <Text style={styles.headerTitle}>Favorites</Text>
             </View>
 
@@ -64,9 +81,16 @@ const FavoritesScreen = ({ navigation, route }) => {
             />
 
             {/* Favorites List */}
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                {filteredFavorites.map(event => renderFavoriteCard(event))}
-            </ScrollView>
+            <FlatList
+                contentContainerStyle={styles.scrollContainer}
+                data={filteredFavorites}
+                renderItem={({ item }) => renderFavoriteCard(item)}
+                keyExtractor={(item) => item.id}
+                showsHorizontalScrollIndicator={false}
+                ListEmptyComponent={
+                    <Text style={styles.noFavoritesText}>No favorite events found.</Text>
+                }
+             />
         </View>
     );
 };
@@ -79,15 +103,9 @@ const styles = StyleSheet.create({
     },
     header: {
         flexDirection: 'row',
-        alignItems: 'center',
+        justifyContent: 'center',
         marginTop: 60,
         marginBottom: 20,
-    },
-    backButton: {
-        padding: 10,
-        backgroundColor: '#ff7518',
-        borderRadius: 30,
-        marginRight: 10,
     },
     headerTitle: {
         fontSize: 24,
@@ -160,7 +178,14 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     scrollContainer: {
-        paddingBottom: 20,
+        paddingBottom: 500,
+        padding: 1,
+    },
+    noFavoritesText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        marginTop: 20,
     },
 });
 

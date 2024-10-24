@@ -1,28 +1,70 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  FlatList,
-  Image,
-  Modal,
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, Modal } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 
-const eventsData = [
-  { id: 1, image: 'event-image-url', category: 'Music', date: '2024-11-01', location: 'Nairobi', price: 1000, description: 'Join us for a night of live music!', rating: 4.5, title: 'Live Music Night', coordinates: { latitude: -1.286389, longitude: 36.817223 } },
-  { id: 2, image: 'event-image-url', category: 'Tech', date: '2024-11-05', location: 'Mombasa', price: 1500, description: 'Explore the latest in technology.', rating: 4.0, title: 'Tech Expo 2024', coordinates: { latitude: -4.043477, longitude: 39.668207 } },
-  { id: 3, image: 'event-image-url', category: 'Sports', date: '2024-11-10', location: 'Nairobi', price: 2000, description: 'Catch the big game live!', rating: 5.0, title: 'Football Match', coordinates: { latitude: -1.2921, longitude: 36.8219 } },
-];
-
 const ExploreScreen = () => {
+  const events = [
+    {
+      id: 1,
+      title: "Art Exhibition",
+      category: "Art",
+      date: "2024-10-30",
+      location: "Gallery X",
+      coordinates: { latitude: -1.2921, longitude: 36.8219 },
+      image: "https://via.placeholder.com/220",
+      description: "A wonderful art exhibition featuring local artists.",
+      rating: 4.5,
+      price: 500,
+    },
+    {
+      id: 2,
+      title: "Music Concert",
+      category: "Music",
+      date: "2024-11-05",
+      location: "Stadium Y",
+      coordinates: { latitude: -1.2955, longitude: 36.8231 },
+      image: "https://via.placeholder.com/220",
+      description: "Join us for an unforgettable night of music.",
+      rating: 4.8,
+      price: 1000,
+    },
+    {
+      id: 3,
+      title: "Food Festival",
+      category: "Food",
+      date: "2024-11-10",
+      location: "Park Z",
+      coordinates: { latitude: -1.2929, longitude: 36.8181 },
+      image: "https://via.placeholder.com/220",
+      description: "Taste delicious dishes from various cuisines.",
+      rating: 4.7,
+      price: 300,
+    },
+  ];
+
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredEvents, setFilteredEvents] = useState(eventsData);
+  const [filteredEvents, setFilteredEvents] = useState(events);
+  const [mapRegion, setMapRegion] = useState({
+    latitude: -1.286389,
+    longitude: 36.817223,
+    latitudeDelta: 0.1,
+    longitudeDelta: 0.1,
+  });
+
+  useEffect(() => {
+    const filtered = searchQuery
+      ? events.filter(event =>
+          event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          event.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          event.location.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : events;
+
+    setFilteredEvents(filtered);
+  }, [searchQuery]); // Only depend on searchQuery
 
   const handleEventSelect = (event) => {
     setSelectedEvent(event);
@@ -31,16 +73,6 @@ const ExploreScreen = () => {
 
   const handleSearch = (query) => {
     setSearchQuery(query);
-    if (query === '') {
-      setFilteredEvents(eventsData);
-    } else {
-      const filtered = eventsData.filter(event => 
-        event.title.toLowerCase().includes(query.toLowerCase()) ||
-        event.category.toLowerCase().includes(query.toLowerCase()) ||
-        event.location.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredEvents(filtered);
-    }
   };
 
   const handleFilter = () => {
@@ -49,16 +81,7 @@ const ExploreScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Map Background */}
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: -1.286389, // Center on Nairobi
-          longitude: 36.817223,
-          latitudeDelta: 0.1,
-          longitudeDelta: 0.1,
-        }}
-      >
+      <MapView style={styles.map} initialRegion={mapRegion}>
         {filteredEvents.map(event => (
           <Marker
             key={event.id}
@@ -70,7 +93,6 @@ const ExploreScreen = () => {
         ))}
       </MapView>
 
-      {/* Floating Event Cards */}
       <FlatList
         data={filteredEvents}
         horizontal
@@ -78,7 +100,6 @@ const ExploreScreen = () => {
         showsHorizontalScrollIndicator={false}
         renderItem={({ item }) => (
           <TouchableOpacity
-            key={item.id}
             style={styles.eventCard}
             onPress={() => handleEventSelect(item)}
           >
@@ -94,7 +115,6 @@ const ExploreScreen = () => {
         keyExtractor={(item) => item.id.toString()}
       />
 
-      {/* Floating Search Bar */}
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -107,7 +127,6 @@ const ExploreScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Event Details Modal */}
       {selectedEvent && (
         <Modal
           transparent={true}
@@ -285,14 +304,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalRating: {
-    fontSize: 14,
     color: '#ff7518',
     fontWeight: 'bold',
   },
   modalPrice: {
-    fontSize: 16,
     fontWeight: 'bold',
-    color: '#000',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -301,34 +317,31 @@ const styles = StyleSheet.create({
   },
   buyTicketsButton: {
     backgroundColor: '#ff7518',
-    borderRadius: 5,
+    borderRadius: 20,
     padding: 10,
     flex: 1,
     marginRight: 5,
-    alignItems: 'center',
   },
   buyTicketsText: {
-    color: 'white',
-    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#fff',
   },
   closeButton: {
-    backgroundColor: '#dcdcdc',
+    backgroundColor: '#ccc',
+    borderRadius: 20,
     padding: 10,
-    borderRadius: 5,
     flex: 1,
     marginLeft: 5,
-    alignItems: 'center',
   },
   closeButtonText: {
-    color: 'white',
+    color: '#fff',
+    textAlign: 'center',
   },
   socialContainer: {
     marginTop: 10,
     alignItems: 'center',
-    width: '100%',
   },
   socialText: {
-    color: '#777',
     marginBottom: 5,
   },
   socialIcons: {

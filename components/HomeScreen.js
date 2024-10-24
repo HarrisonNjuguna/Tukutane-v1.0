@@ -3,24 +3,32 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, S
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import * as Location from 'expo-location';
+import { useLayoutEffect } from 'react';
 import axios from 'axios'; // Make sure to import axios
 
-const categoriesData = ["Music", "Tech", "Sports", "Fashion", "Fitness", "Art"];
+const categoriesData = [ "All", "Music", "Tech", "Sports", "Fashion", "Fitness", "Art"];
 const eventsData = [
-    { id: 1, image: 'https://images.unsplash.com/photo-1530491396055-5aca4203edbf?q=80&w=1371&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', category: 'Music', date: '2024-11-01', location: 'Nairobi', price: 1000, description: 'Join us for a night of live music!', rating: 4.5, title: 'Live Music Night' },
-    { id: 2, image: 'https://images.unsplash.com/photo-1530491396055-5aca4203edbf?q=80&w=1371&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', category: 'Tech', date: '2024-11-05', location: 'Mombasa', price: 1500, description: 'Explore the latest in technology.', rating: 4.0, title: 'Tech Expo 2024' },
-    { id: 3, image: 'https://images.unsplash.com/photo-1530491396055-5aca4203edbf?q=80&w=1371&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', category: 'Sports', date: '2024-11-10', location: 'Nairobi', price: 2000, description: 'Catch the big game live!', rating: 5.0, title: 'Football Match' },
-    { id: 4, image: 'https://images.unsplash.com/photo-1530491396055-5aca4203edbf?q=80&w=1371&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', category: 'Fashion', date: '2024-11-15', location: 'Mombasa', price: 1200, description: 'Fashion show featuring top designers.', rating: 4.8, title: 'Fashion Week' },
-    { id: 5, image: 'https://images.unsplash.com/photo-1530491396055-5aca4203edbf?q=80&w=1371&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', category: 'Art', date: '2024-11-20', location: 'Nairobi', price: 800, description: 'Art exhibition showcasing local artists.', rating: 4.7, title: 'Local Artists Exhibition' },
-    { id: 6, image: 'https://images.unsplash.com/photo-1530491396055-5aca4203edbf?q=80&w=1371&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', category: 'Fitness', date: '2024-11-25', location: 'Mombasa', price: 500, description: 'Join our outdoor fitness bootcamp!', rating: 4.6, title: 'Outdoor Bootcamp' },
+    { id: 1, image: 'image-url', category: 'Music', date: '2024-11-01', location: 'Nairobi', price: 1000, description: 'Join us for a night of live music!', rating: 4.5, title: 'Live Music Night' },
+    { id: 2, image: 'image-url', category: 'Tech', date: '2024-11-05', location: 'Mombasa', price: 1500, description: 'Explore the latest in technology.', rating: 4.0, title: 'Tech Expo 2024' },
+    { id: 3, image: 'image-url', category: 'Sports', date: '2024-11-10', location: 'Nairobi', price: 2000, description: 'Catch the big game live!', rating: 5.0, title: 'Football Match' },
+    { id: 4, image: 'image-url', category: 'Fashion', date: '2024-11-15', location: 'Mombasa', price: 1200, description: 'Fashion show featuring top designers.', rating: 4.8, title: 'Fashion Week' },
+    { id: 5, image: 'image-url', category: 'Art', date: '2024-11-20', location: 'Nairobi', price: 800, description: 'Art exhibition showcasing local artists.', rating: 4.7, title: 'Local Artists Exhibition' },
+    { id: 6, image: 'image-url', category: 'Fitness', date: '2024-11-25', location: 'Mombasa', price: 500, description: 'Join our outdoor fitness bootcamp!', rating: 4.6, title: 'Outdoor Bootcamp' },
 ];
 
 const HomeScreen = ({ navigation }) => {
-    const [selectedCategory, setSelectedCategory] = useState('Music');
+    const [selectedCategory, setSelectedCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterModalVisible, setFilterModalVisible] = useState(false);
     const [selectedFilters, setSelectedFilters] = useState({ category: '', date: '', priceRange: [0, 2500] });
-    const [location, setLocation] = useState('Fetching location...');
+    const [location, setLocation] = useState('Getting location...');
+    const [favorites, setFavorites] = useState([]); // State to hold favorite events
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            gestureEnabled: false, // Disable swipe back gesture
+        });
+    }, [navigation]);
 
     useEffect(() => {
         const fetchLocation = async () => {
@@ -86,6 +94,23 @@ const HomeScreen = ({ navigation }) => {
         );
     };
 
+    const handleRSVP = (event) => {
+        setFavorites((prevFavorites) => {
+            if (prevFavorites.some(fav => fav.id === event.id)) {
+                return prevFavorites; // If already a favorite, don't add again
+            }
+            return [...prevFavorites, event]; // Add to favorites
+        });
+    };
+    
+    const navigateToFavorites = () => {
+        navigation.navigate('Favorites', { favorites }); // Pass favorites when navigating
+    };
+
+    const navigateToExplore = () => {
+        navigation.navigate('ExploreScreen', { events: eventsData });
+    };
+
     const renderEventCard = (event) => (
         <TouchableOpacity 
             style={styles.eventCard} 
@@ -99,7 +124,10 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.eventDescription}>{event.description}</Text>
             <Text style={styles.eventRating}>Rating: {event.rating} ★</Text>
             <Text style={styles.eventPrice}>Ksh. {event.price}/Person</Text>
-            <TouchableOpacity style={styles.rsvpButton}>
+            <TouchableOpacity 
+                style={styles.rsvpButton}
+                onPress={() => handleRSVP(event)} // Call handleRSVP on button press
+            >
                 <Text style={styles.rsvpButtonText}>RSVP</Text>
             </TouchableOpacity>
         </TouchableOpacity>
@@ -188,7 +216,7 @@ const HomeScreen = ({ navigation }) => {
                 {/* Categories Section */}
                 <View style={styles.categoriesHeader}>
                     <Text style={styles.sectionTitle}>Categories</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('AllEvents', { title: 'Categories', events: eventsData })}>
+                    <TouchableOpacity onPress={navigateToExplore}>
                         <Text style={styles.seeAllText}>See all</Text>
                     </TouchableOpacity>
                 </View>

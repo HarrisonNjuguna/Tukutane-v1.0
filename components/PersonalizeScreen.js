@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const interestsData = [
     { name: "Gaming", icon: "game-controller" },
     { name: "Music", icon: "musical-notes" },
     { name: "Culture", icon: "camera" },
-    { name: "Photography", icon: "camera" },
     { name: "Fashion", icon: "shirt-outline" },
     { name: "Fitness", icon: "fitness" },
     { name: "Art", icon: "color-palette-outline" },
@@ -15,19 +14,39 @@ const interestsData = [
     { name: "Reality", icon: "business" },
     { name: "Cars", icon: "car-sport" },
     { name: "Church", icon: "people" },
-    { name: "Religious", icon: "people" },
-]
+];
+
 const PersonalizeScreen = ({ navigation }) => {
     const [selectedInterests, setSelectedInterests] = useState([]);
+    const [animation] = useState(new Animated.Value(1));
 
-    // Handle interest selection
     const handleInterestSelect = (interest) => {
         if (selectedInterests.includes(interest)) {
             setSelectedInterests(selectedInterests.filter(i => i !== interest));
         } else if (selectedInterests.length < 5) {
             setSelectedInterests([...selectedInterests, interest]);
+            // Trigger animation
+            Animated.spring(animation, {
+                toValue: 1.2,
+                friction: 2,
+                useNativeDriver: true,
+            }).start(() => {
+                Animated.spring(animation, {
+                    toValue: 1,
+                    friction: 2,
+                    useNativeDriver: true,
+                }).start();
+            });
         } else {
             Alert.alert("Limit Reached", "You can only select up to 5 interests.");
+        }
+    };
+
+    const handleNext = () => {
+        if (selectedInterests.length === 0) {
+            Alert.alert("Selection Required", "Please select at least one interest to proceed.");
+        } else {
+            navigation.navigate('Main');
         }
     };
 
@@ -43,26 +62,29 @@ const PersonalizeScreen = ({ navigation }) => {
             </Text>
 
             <View style={styles.interestsContainer}>
-                {interestsData.map((interest) => (
-                    <TouchableOpacity
-                        key={interest.name}
-                        style={[
-                            styles.interestButton,
-                            selectedInterests.includes(interest.name) ? styles.selectedButton : styles.unselectedButton
-                        ]}
-                        onPress={() => handleInterestSelect(interest.name)}
-                    >
-                        <Ionicons name={interest.icon} size={24} color={selectedInterests.includes(interest.name) ? "#fff" : "#acacac"} />
-                        <Text style={[styles.interestText, { color: selectedInterests.includes(interest.name) ? "#fff" : "#acacac" }]}>
-                            {interest.name}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
+                {interestsData.map((interest) => {
+                    const isSelected = selectedInterests.includes(interest.name);
+                    return (
+                        <TouchableOpacity
+                            key={interest.name}
+                            style={[styles.interestButton, isSelected ? styles.selectedButton : styles.unselectedButton]}
+                            onPress={() => handleInterestSelect(interest.name)}
+                        >
+                            <Animated.View style={{ transform: [{ scale: isSelected ? animation : 1 }] }}>
+                                <Ionicons name={interest.icon} size={24} color={isSelected ? "#fff" : "#acacac"} />
+                            </Animated.View>
+                            <Text style={[styles.interestText, { color: isSelected ? "#fff" : "#acacac" }]}>
+                                {interest.name}
+                            </Text>
+                        </TouchableOpacity>
+                    );
+                })}
             </View>
 
             <TouchableOpacity 
-                style={styles.nextButton} 
-                onPress={() => navigation.navigate('Main')} 
+                style={[styles.nextButton, { opacity: selectedInterests.length === 0 ? 0.5 : 1 }]} 
+                onPress={handleNext} 
+                disabled={selectedInterests.length === 0} 
             >
                 <Text style={styles.nextButtonText}>Next</Text>
             </TouchableOpacity>
@@ -73,30 +95,29 @@ const PersonalizeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#f5f5f5', // Soft background color for warmth
         alignItems: 'center',
         justifyContent: 'center',
         padding: 20,
     },
     backButton: {
         position: 'absolute',
-        left: 0,
-        top: 0,
-        marginTop: 60,
-        marginLeft: 20,
+        left: 20,
+        top: 60,
         backgroundColor: '#ff7518',
         padding: 10,
         borderRadius: 20,
     },
     title: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
         marginBottom: 10,
         textAlign: 'center',
+        color: '#333',
     },
     subtitle: {
-        fontSize: 16,
-        color: '#acacac',
+        fontSize: 18,
+        color: '#555',
         textAlign: 'center',
         marginBottom: 20,
     },
@@ -118,6 +139,14 @@ const styles = StyleSheet.create({
         flexBasis: '30%',
         minWidth: 120,
         maxWidth: '48%',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5,
     },
     selectedButton: {
         backgroundColor: '#ff7518',

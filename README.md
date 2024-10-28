@@ -1,5 +1,6 @@
 Tukutane v1.0
 Tukutane is Kenya's first event discovery and socializing app, designed to help users discover events tailored to their interests and connect with like-minded individuals. The app aims to enhance event experiences through personalized recommendations.
+![1](https://github.com/user-attachments/assets/163eaa86-597b-47b4-9bd0-73e376b59d05)
 
 {Table of Contents}
   - Features

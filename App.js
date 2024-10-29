@@ -67,7 +67,7 @@ export default function App() {
     }, []);
 
     if (loading) {
-        return null; // Show loading state or splash screen while loading
+        return <SplashScreen/>; 
     }
 
     return (

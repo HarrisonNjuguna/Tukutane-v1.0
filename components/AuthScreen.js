@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView } from 'react-native';
 import { auth } from '../firebase/firebase'; // Adjust the path if necessary
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { FacebookAuthProvider } from 'firebase/auth';
 import { Facebook } from 'expo-auth-session/providers/facebook';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -16,6 +16,7 @@ export default function AuthScreen({ navigation }) {
     const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
     const [termsModalVisible, setTermsModalVisible] = useState(false);
     const [isAgreed, setIsAgreed] = useState(false);
+    const [forgotPasswordModalVisible, setForgotPasswordModalVisible] = useState(false);
 
     useEffect(() => {
         const checkAppleAuth = async () => {
@@ -54,6 +55,21 @@ export default function AuthScreen({ navigation }) {
                     console.error("Sign In Error:", error);
                     Alert.alert('Error', error.message);
                 });
+        }
+    };
+
+    const handleForgotPassword = async () => {
+        if (!email) {
+            Alert.alert('Error', 'Please enter your email address');
+            return;
+        }
+        try {
+            await sendPasswordResetEmail(auth, email);
+            Alert.alert('Success', 'Password reset link sent to your email');
+            setForgotPasswordModalVisible(false); // Close the modal
+        } catch (error) {
+            console.error("Reset Password Error:", error);
+            Alert.alert('Error', error.message);
         }
     };
 
@@ -141,6 +157,9 @@ export default function AuthScreen({ navigation }) {
                     />
                 </>
             )}
+            <TouchableOpacity onPress={() => setForgotPasswordModalVisible(true)}>
+                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+            </TouchableOpacity>
             {isSignUp && (
                 <View style={styles.checkboxContainer}>
                     <TouchableOpacity onPress={() => setIsAgreed(!isAgreed)}>
@@ -183,6 +202,36 @@ export default function AuthScreen({ navigation }) {
                 </Text>
             </TouchableOpacity>
 
+            {/* Forgot Password Modal */}
+            <Modal
+                visible={forgotPasswordModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setForgotPasswordModalVisible(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Reset Password</Text>
+                        <Text style={styles.modalSubtitle}>Enter your email to receive a password reset link</Text>
+                        <TextInput
+                            placeholder="YourEmail@gmail.com"
+                            style={styles.input}
+                            value={email}
+                            onChangeText={setEmail}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                        />
+                        <TouchableOpacity style={styles.resetButton} onPress={handleForgotPassword}>
+                            <Text style={styles.resetButtonText}>Send Reset Link</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.closeButton} onPress={() => setForgotPasswordModalVisible(false)}>
+                            <Text style={styles.closeButtonText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Terms Modal */}
             <Modal
                 visible={termsModalVisible}
                 transparent={true}
@@ -240,6 +289,11 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         borderWidth: 1,
         borderColor: '#ddd',
+    },
+    forgotPasswordText: {
+        color: '#ff7518',
+        textAlign: 'center',
+        marginVertical: 10,
     },
     authButton: {
         paddingVertical: 15,
@@ -343,19 +397,39 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         padding: 20,
     },
-    termsTitle: {
+    modalTitle: {
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 10,
     },
-    closeButton: {
+    modalSubtitle: {
+        fontSize: 16,
+        marginBottom: 20,
+    },
+    resetButton: {
         backgroundColor: '#ff7518',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    resetButtonText: {
+        color: '#fff',
+        fontSize: 16,
+    },
+    closeButton: {
+        backgroundColor: '#ddd',
         padding: 10,
         borderRadius: 5,
         alignItems: 'center',
     },
     closeButtonText: {
-        color: '#fff',
+        color: '#111',
         fontSize: 16,
+    },
+    termsTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 10,
     },
 });

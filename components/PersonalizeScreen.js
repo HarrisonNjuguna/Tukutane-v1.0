@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { firebase } from '../firebase/firebase';  // assuming you have your Firebase config here
 
 const interestsData = [
     { name: "Gaming", icon: "game-controller" },
@@ -20,6 +22,10 @@ const PersonalizeScreen = ({ navigation }) => {
     const [selectedInterests, setSelectedInterests] = useState([]);
     const [animation] = useState(new Animated.Value(1));
 
+    // Firebase Firestore reference
+    const db = getFirestore(firebase);
+
+    // Handle interest selection and animation
     const handleInterestSelect = (interest) => {
         if (selectedInterests.includes(interest)) {
             setSelectedInterests(selectedInterests.filter(i => i !== interest));
@@ -42,25 +48,40 @@ const PersonalizeScreen = ({ navigation }) => {
         }
     };
 
-    const handleNext = () => {
+    // Handle next button press, save interests to Firebase
+    const handleNext = async () => {
         if (selectedInterests.length === 0) {
             Alert.alert("Selection Required", "Please select at least one interest to proceed.");
         } else {
-            navigation.navigate('Main');
+            try {
+                const userRef = doc(db, 'users', 'userId');  // Replace 'userId' with the actual user ID
+                await setDoc(userRef, {
+                    interests: selectedInterests
+                }, { merge: true });
+
+                // Navigate to the main screen
+                navigation.navigate('Main');
+            } catch (error) {
+                console.error("Error saving interests to Firestore: ", error);
+                Alert.alert("Error", "There was an issue saving your interests. Please try again.");
+            }
         }
     };
 
     return (
         <View style={styles.container}>
-            {/* Header */}
+            {/* Back Button */}
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                 <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
+
+            {/* Title and Subtitle */}
             <Text style={styles.title}>Select up to 5 Interests</Text>
             <Text style={styles.subtitle}>
                 Personalize your events journey by choosing your interests
             </Text>
 
+            {/* Interests Buttons */}
             <View style={styles.interestsContainer}>
                 {interestsData.map((interest) => {
                     const isSelected = selectedInterests.includes(interest.name);
@@ -81,10 +102,11 @@ const PersonalizeScreen = ({ navigation }) => {
                 })}
             </View>
 
-            <TouchableOpacity 
-                style={[styles.nextButton, { opacity: selectedInterests.length === 0 ? 0.5 : 1 }]} 
-                onPress={handleNext} 
-                disabled={selectedInterests.length === 0} 
+            {/* Next Button */}
+            <TouchableOpacity
+                style={[styles.nextButton, { opacity: selectedInterests.length === 0 ? 0.5 : 1 }]}
+                onPress={handleNext}
+                disabled={selectedInterests.length === 0}
             >
                 <Text style={styles.nextButtonText}>Next</Text>
             </TouchableOpacity>
@@ -92,6 +114,7 @@ const PersonalizeScreen = ({ navigation }) => {
     );
 };
 
+// Styles
 const styles = StyleSheet.create({
     container: {
         flex: 1,

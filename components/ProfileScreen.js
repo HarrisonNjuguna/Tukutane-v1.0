@@ -51,7 +51,7 @@ export default function ProfileScreen({ navigation }) {
                         setUsername(data.username);
                         setEmail(data.email || '');
                         setPhoneNumber(data.phoneNumber || '');
-                        setProfilePicture(data.profilePicture || 'https://example.com/default-profile-picture.jpg');
+                        setProfilePicture(data.profilePicture || '/TukutaneApp/assets/df-profile.png');
                     }
                 } catch (error) {
                     console.error("Error fetching user data:", error);
